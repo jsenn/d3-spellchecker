@@ -1,4 +1,10 @@
-d3.json 'wordlist.json', (err, json) -> console.warn err if err?; window.NWORDS = json
+# ############ #
+# SPELLCHECKER #
+# ############ #
+
+d3.json 'wordlist.json', (err, json) ->
+  console.warn err if err?
+  window.NWORDS = json
 
 alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
@@ -27,9 +33,10 @@ known = (words) -> (word for word in words when word of NWORDS)
 # Set of all distance-2 edits encountered in the training set
 edits2 = (word) -> known ((edits1 e1) for e1 in edits1 word)
 
-# Return a function that finds the most plausible correction (if one exists)
+# Find the most plausible correction of the given word
+# with respect to the training set, assuming that small
+# errors are more common than big ones.
 correct = (word) ->
-  # Assume that small mistakes are more common than big ones
   e1 = known (edits1 word)
   if e1.length
     corrections = e1
@@ -42,7 +49,13 @@ correct = (word) ->
     count = NWORDS[w]
     [maxword, maxval] = [w, count] if count > maxval
 
-  (maxword or corrections[0]).split ''
+  # Return the best correction if it exists.
+  # Otherwise spit back the original word.
+  maxword or corrections[0]
+
+# ############## #
+# ANIMATION CODE #
+# ############## #
 
 width = 960
 height = 250
@@ -60,9 +73,15 @@ svg = d3.select('body')
 update = ->
   char = String.fromCharCode(d3.event.keyCode).toLowerCase()
   switch
-    when char is '\b' then data.pop(); show()
-    when char is '\r' then data = correct (data.join ''); correction()
-    when char in alphabet then data.push char; show()
+    when char is '\b'
+      data.pop()
+      show()
+    when char is '\r'
+      data = (correct (data.join '')).split ''
+      correction()
+    when char in alphabet
+      data.push char
+      show()
 
 show = ->
   svg.selectAll('text').remove()
